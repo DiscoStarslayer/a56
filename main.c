@@ -41,7 +41,7 @@ extern BOOL list_on;
 BOOL list_on_next = TRUE;
 char *alloc();
 
-int 
+int
 main (int argc, char *argv[])
 {
 	int i;
@@ -97,7 +97,7 @@ struct inc inc[MAX_NEST];
 int inc_p = 0;
 FILE *yyin;
 
-int 
+int
 include (char *file)
 {
 	FILE *fp = open_read(file);
@@ -130,7 +130,7 @@ include (char *file)
 #endif
 }
 
-int 
+int
 yywrap (void)
 {
 	fclose(inc[inc_p].fp);
@@ -146,7 +146,7 @@ yywrap (void)
 	}
 }
 
-struct n 
+struct n
 sym_ref (		/* return symbol value or UNDEF if not defined yet */
     char *sym
 )
@@ -160,7 +160,7 @@ sym_ref (		/* return symbol value or UNDEF if not defined yet */
 	if(NOT sp) {
 		if(pass == 2) {
 			yyerror("%s: undefined symbol", sym);
-		}		   
+		}
 		return result;
 	}
 
@@ -173,7 +173,7 @@ sym_ref (		/* return symbol value or UNDEF if not defined yet */
 
 struct sym *symtab[HASHSIZE];
 
-int 
+int
 sym_def (char *sym, int type, int seg, int i, double f)
 {
 	struct sym *sp, **stop, *find_sym();
@@ -183,7 +183,7 @@ sym_def (char *sym, int type, int seg, int i, double f)
 			pass = 2;				/* what a kludge */
 			yyerror("%s: multiply defined symbol", sym);
 			pass = 1;
-			return;
+			return -1;
 		}
 		stop = &symtab[HASH(sym)];
 		sp = NEW(struct sym);
@@ -204,7 +204,7 @@ sym_def (char *sym, int type, int seg, int i, double f)
 			type == INT && sp->n.val.i != (i & 0xFFFFFF) ||
 			type == FLT && sp->n.val.f != f)
 			yyerror("%s: assembler phase error", sym);
-	}		
+	}
 }
 
 struct sym *
@@ -216,12 +216,12 @@ find_sym (char *sym)
 	for(sp = *stop; sp; sp = sp->next)
 		if(strcmp(sp->name, sym) == 0)
 			return sp;
-		
+
 	return NULL;
 }
 
 extern char segs[];
-int 
+int
 dump_symtab (void)
 {
 	struct sym *sp, **stop;
@@ -245,7 +245,7 @@ SSSSSSSSSSSSSSSS S DDDDDDDDD.DDDDDDDDDD
 				fprintf(obj, "F %.10f %s\n", sp->n.val.f, sp->name);
 			}
 		}
-	}   
+	}
 }
 
 char *
@@ -284,7 +284,7 @@ spaces (int n)
 
 extern char segs[];
 
-int 
+int
 gencode (int seg, int pc, int word)
 {
 	fprintf(obj, "%c %04X %06X\n", segs[seg], pc, word & 0xFFFFFF);
@@ -333,7 +333,7 @@ fixstring (char *s)
 
 #define ONE 0x4000000
 
-int 
+int
 makefrac (char *s)
 {
 	int frac = 0, div = 1;
@@ -362,7 +362,7 @@ makefrac (char *s)
 
 struct psect *ptop = NULL, *cur_psect = NULL;
 
-int 
+int
 reset_psects (void)
 {
 	struct psect *pp;
@@ -374,7 +374,7 @@ reset_psects (void)
 	set_psect(NULL);
 }
 
-int 
+int
 psect_summary (void)
 {
 	printf("\nSummary of psect usage\n\n");
@@ -390,13 +390,13 @@ SSSSSSSSSSSSSSSSSSSSSSSS  X  FFFF FFFF FFFF 99999 100%  99999 100%  99999
 	printf("\n");
 }
 
-int 
+int
 summarize (struct psect *pp)
 {
 	int used, avail, of;
 
 	if(pp == NULL)
-		return;
+		return -1;
 
 	used = pp->pc - pp->bottom;
 	avail = pp->top - pp->pc;
@@ -422,17 +422,17 @@ find_psect (char *name)
 	return NULL;
 }
 
-int 
+int
 set_psect (struct psect *pp)
 {
 	cur_psect = pp;
 }
 
-int 
+int
 check_psect (int seg, unsigned int pc)
 {
 	if(cur_psect) {
-		if(seg == cur_psect->seg && pc >= cur_psect->bottom && 
+		if(seg == cur_psect->seg && pc >= cur_psect->bottom &&
 			pc <= cur_psect->top) {
 			cur_psect->pc = pc;
 			return TRUE;

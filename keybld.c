@@ -22,7 +22,7 @@ static char *Copyright = "Copyright (C) 1990-1994 Quinn C. Jensen";
 
 char buf[1024];
 
-int 
+int
 main (void)
 {
 	int line = 0;
@@ -70,34 +70,11 @@ struct user_action {
 } *utop = NULL, *ucur = NULL;
 int n_user_actions = 0;
 
-int 
-add_tok (char *tok, char *actions)
-{
-	struct state *scur;
-	struct user_action *unew = (struct user_action *)alloc(sizeof *unew);
-	unew->action = strsave(actions);
-	unew->next = NULL;
-	if(ucur)
-		ucur->next = unew;
-	ucur = unew;
-	if(utop == NULL)
-		utop = unew;
-
-	if(stop == NULL)
-		new_state(NULL);
-
-	if(follow(*tok, tok + 1, stop) == -1)
-		return -1;
-
-	n_user_actions++;
-	return 0;
-}
-
-int 
+int
 follow (char c, char *tp, struct state *sp)
 {
 	struct trans *arcp, *arcup;
-	
+
 	if(c >= 'a' && c <= 'z') {
 		c -= 'a' - 'A';
 	}
@@ -127,6 +104,29 @@ follow (char c, char *tp, struct state *sp)
 			return follow(*tp, tp + 1, new);
 		}
 	}
+}
+
+int
+add_tok (char *tok, char *actions)
+{
+	struct state *scur;
+	struct user_action *unew = (struct user_action *)alloc(sizeof *unew);
+	unew->action = strsave(actions);
+	unew->next = NULL;
+	if(ucur)
+		ucur->next = unew;
+	ucur = unew;
+	if(utop == NULL)
+		utop = unew;
+
+	if(stop == NULL)
+		new_state(NULL);
+
+	if(follow(*tok, tok + 1, stop) == -1)
+		return -1;
+
+	n_user_actions++;
+	return 0;
 }
 
 struct state *
@@ -159,7 +159,7 @@ new_state (char *tp)
 	return snew;
 }
 
-int 
+int
 dump_machine (void)
 {
 	struct state *sp;
