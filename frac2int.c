@@ -68,9 +68,9 @@
 
 "C" Program:
 #endif
-           /****************************************\
-           **  DECIMAL FRACTION TO HEX CONVERSION  **
-           \****************************************/
+/****************************************\
+**  DECIMAL FRACTION TO HEX CONVERSION  **
+\****************************************/
 
 /******************************************************************\
 *  This program converts one decimal, fractional number to a hex   *
@@ -98,21 +98,20 @@
 *         signed, fractional quantities.                           *
 \******************************************************************/
 
-main()
-{
-           double fractnum;              /* double precision floating pt */
-           long   hexval;                /* long integer */
+main() {
+  double fractnum; /* double precision floating pt */
+  long hexval;     /* long integer */
 
-    for(;;) {
-        /* Read 1 Decimal Floating Point Number from the Keyboard */
-           printf("Enter the decimal fraction: ");
-           scanf("%lf", &fractnum);
+  for (;;) {
+    /* Read 1 Decimal Floating Point Number from the Keyboard */
+    printf("Enter the decimal fraction: ");
+    scanf("%lf", &fractnum);
 
-        /* Convert to a Hex Integer which can be used by the DSP56200 */
-           hexval =  (long) (8388608.0 * fractnum);
-           hexval =  0x00ffffffL & hexval;
+    /* Convert to a Hex Integer which can be used by the DSP56200 */
+    hexval = (long)(8388608.0 * fractnum);
+    hexval = 0x00ffffffL & hexval;
 
-        /* Write the Hex number out to the Terminal */
-           printf("DSP56200 Coefficient = %06lx\n", hexval);
-    }
+    /* Write the Hex number out to the Terminal */
+    printf("DSP56200 Coefficient = %06lx\n", hexval);
+  }
 }

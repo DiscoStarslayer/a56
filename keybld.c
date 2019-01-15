@@ -17,31 +17,31 @@ static char *Copyright = "Copyright (C) 1990-1994 Quinn C. Jensen";
  *
  */
 
-#include <stdio.h>
 #include "a56.h"
+#include <stdio.h>
 
 char buf[1024];
 
-int
-main (void)
-{
-	int line = 0;
+int main(void) {
+  int line = 0;
 
-	while(gets(buf)) {
-		char *bp = buf;
-		line++;
-		while(*bp != '\t' && *bp != ' ') bp++;
-		*bp++ = '\0';
-		while(*bp == '\t' || *bp == ' ') bp++;
-		if(strcmp(buf, ".code") == 0) {
-			printf("%s\n", bp);
-		} else if(add_tok(buf, bp) == -1) {
-			fprintf(stderr, "input line %d: ambiguous\n", line);
-		}
-	}
+  while (gets(buf)) {
+    char *bp = buf;
+    line++;
+    while (*bp != '\t' && *bp != ' ')
+      bp++;
+    *bp++ = '\0';
+    while (*bp == '\t' || *bp == ' ')
+      bp++;
+    if (strcmp(buf, ".code") == 0) {
+      printf("%s\n", bp);
+    } else if (add_tok(buf, bp) == -1) {
+      fprintf(stderr, "input line %d: ambiguous\n", line);
+    }
+  }
 
-	dump_machine();
-	return 0;
+  dump_machine();
+  return 0;
 }
 
 #define MAX_CHAR 'z'
@@ -49,153 +49,145 @@ main (void)
 #define TRANSITIONS (MAX_CHAR + 1)
 
 struct state {
-	int number;
-	char *seen;
-	struct trans {
-		char action;
-		void *arg;
-	} trans[TRANSITIONS];
-	struct state *next;
+  int number;
+  char *seen;
+  struct trans {
+    char action;
+    void *arg;
+  } trans[TRANSITIONS];
+  struct state *next;
 } empty_state, *stop = NULL, *scur = NULL, *new_state();
 int n_states = 0;
 
 /* actions */
-#define NOMATCH 0	/* argument is nothing */
-#define GOTO 1		/* argument is target state */
-#define TERMINAL 2	/* argument is which user action to perform */
+#define NOMATCH 0  /* argument is nothing */
+#define GOTO 1     /* argument is target state */
+#define TERMINAL 2 /* argument is which user action to perform */
 
 struct user_action {
-	char *action;
-	struct user_action *next;
+  char *action;
+  struct user_action *next;
 } *utop = NULL, *ucur = NULL;
 int n_user_actions = 0;
 
-int
-follow (char c, char *tp, struct state *sp)
-{
-	struct trans *arcp, *arcup;
+int follow(char c, char *tp, struct state *sp) {
+  struct trans *arcp, *arcup;
 
-	if(c >= 'a' && c <= 'z') {
-		c -= 'a' - 'A';
-	}
-	arcp = sp->trans + c;
+  if (c >= 'a' && c <= 'z') {
+    c -= 'a' - 'A';
+  }
+  arcp = sp->trans + c;
 
-	if(c >= 'A' && c <= 'Z') {
-		arcup = sp->trans + c + 'a' - 'A';
-	} else {
-		arcup = arcp;
-	}
+  if (c >= 'A' && c <= 'Z') {
+    arcup = sp->trans + c + 'a' - 'A';
+  } else {
+    arcup = arcp;
+  }
 
-	if(c == '\0') {
-		if(arcp->action == TERMINAL) {
-			return -1;
-		} else {
-			arcp->action = arcup->action = TERMINAL;
-			arcp->arg = arcup->arg = (void *)n_user_actions;
-			return 0;
-		}
-	} else {
-		if(arcp->action == GOTO) {
-			return follow(*tp, tp + 1, arcp->arg);
-		} else {
-			struct state *new = new_state(tp);
-			arcp->action = arcup->action = GOTO;
-			arcp->arg = arcup->arg = (void *)new;
-			return follow(*tp, tp + 1, new);
-		}
-	}
+  if (c == '\0') {
+    if (arcp->action == TERMINAL) {
+      return -1;
+    } else {
+      arcp->action = arcup->action = TERMINAL;
+      arcp->arg = arcup->arg = (void *)n_user_actions;
+      return 0;
+    }
+  } else {
+    if (arcp->action == GOTO) {
+      return follow(*tp, tp + 1, arcp->arg);
+    } else {
+      struct state *new = new_state(tp);
+      arcp->action = arcup->action = GOTO;
+      arcp->arg = arcup->arg = (void *)new;
+      return follow(*tp, tp + 1, new);
+    }
+  }
 }
 
-int
-add_tok (char *tok, char *actions)
-{
-	struct state *scur;
-	struct user_action *unew = (struct user_action *)alloc(sizeof *unew);
-	unew->action = strsave(actions);
-	unew->next = NULL;
-	if(ucur)
-		ucur->next = unew;
-	ucur = unew;
-	if(utop == NULL)
-		utop = unew;
+int add_tok(char *tok, char *actions) {
+  struct state *scur;
+  struct user_action *unew = (struct user_action *)alloc(sizeof *unew);
+  unew->action = strsave(actions);
+  unew->next = NULL;
+  if (ucur)
+    ucur->next = unew;
+  ucur = unew;
+  if (utop == NULL)
+    utop = unew;
 
-	if(stop == NULL)
-		new_state(NULL);
+  if (stop == NULL)
+    new_state(NULL);
 
-	if(follow(*tok, tok + 1, stop) == -1)
-		return -1;
+  if (follow(*tok, tok + 1, stop) == -1)
+    return -1;
 
-	n_user_actions++;
-	return 0;
+  n_user_actions++;
+  return 0;
 }
 
-struct state *
-new_state (char *tp)
-{
-	struct state *snew = (struct state *)alloc(sizeof *snew);
-	char tmp[1024];
+struct state *new_state(char *tp) {
+  struct state *snew = (struct state *)alloc(sizeof *snew);
+  char tmp[1024];
 
-	*snew = empty_state;
+  *snew = empty_state;
 
-	snew->number = n_states++;
+  snew->number = n_states++;
 
-	snew->next = NULL;
+  snew->next = NULL;
 
-	if(scur)
-		scur->next = snew;
-	scur = snew;
+  if (scur)
+    scur->next = snew;
+  scur = snew;
 
-	if(stop == NULL)
-		stop = snew;
+  if (stop == NULL)
+    stop = snew;
 
-	if(tp) {
-		strncpy(tmp, buf, tp - buf);
-		tmp[tp - buf] = '\0';
-	} else
-		strcpy(tmp, "<nothing>");
+  if (tp) {
+    strncpy(tmp, buf, tp - buf);
+    tmp[tp - buf] = '\0';
+  } else
+    strcpy(tmp, "<nothing>");
 
-	snew->seen = strsave(tmp);
+  snew->seen = strsave(tmp);
 
-	return snew;
+  return snew;
 }
 
-int
-dump_machine (void)
-{
-	struct state *sp;
-	struct user_action *up;
-	int n, a;
+int dump_machine(void) {
+  struct state *sp;
+  struct user_action *up;
+  int n, a;
 
-	printf("/* state machine generated by keybld */\n");
-	printf("/* states=%d actions=%d */\n", n_states, n_user_actions);
-	printf("/* %d bytes required for transition table storage */\n",
-		sizeof(short) * TRANSITIONS * n_states);
+  printf("/* state machine generated by keybld */\n");
+  printf("/* states=%d actions=%d */\n", n_states, n_user_actions);
+  printf("/* %d bytes required for transition table storage */\n",
+         sizeof(short) * TRANSITIONS * n_states);
 
-	printf("short transitions[%d][%d] = {\n", n_states, TRANSITIONS);
-	for(n = 0, sp = stop; sp; sp = sp->next, n++) {
-		printf("	/* state %d: \"%s\" */\n", n, sp->seen);
-		printf("	{");
-		for(a = 0; a < TRANSITIONS; a++) {
-			struct trans *tp = sp->trans + a;
-			switch(tp->action) {
-			case GOTO:
-				printf("%d", ((struct state *)tp->arg)->number);
-				break;
-			case TERMINAL:
-				printf("%d", -(int)tp->arg - 1);
-				break;
-			case NOMATCH:
-				printf("0");
-				break;
-			}
-			printf(",%s", a % 20 == 19 ? "\n\t\t" : "");
-		};
-		printf("},\n");
-	}
+  printf("short transitions[%d][%d] = {\n", n_states, TRANSITIONS);
+  for (n = 0, sp = stop; sp; sp = sp->next, n++) {
+    printf("	/* state %d: \"%s\" */\n", n, sp->seen);
+    printf("	{");
+    for (a = 0; a < TRANSITIONS; a++) {
+      struct trans *tp = sp->trans + a;
+      switch (tp->action) {
+      case GOTO:
+        printf("%d", ((struct state *)tp->arg)->number);
+        break;
+      case TERMINAL:
+        printf("%d", -(int)tp->arg - 1);
+        break;
+      case NOMATCH:
+        printf("0");
+        break;
+      }
+      printf(",%s", a % 20 == 19 ? "\n\t\t" : "");
+    };
+    printf("},\n");
+  }
 
-	printf("};\n");
+  printf("};\n");
 
-	printf("\
+  printf("\
 \n\
 kparse(kp)\n\
 char *kp;\n\
@@ -205,7 +197,7 @@ char *kp;\n\
 	for(;;) {\n\
 		short transition = transitions[state][*kp];\n");
 
-printf("\
+  printf("\
 		if(transition == 0) {\n\
 			return 0;\n\
 		} else if(transition > 0) {\n\
@@ -214,18 +206,18 @@ printf("\
 		} else {\n\
 			switch(-transition) {\n");
 
-	for(n = 1, up = utop; up; up = up->next, n++) {
-		printf("\
+  for (n = 1, up = utop; up; up = up->next, n++) {
+    printf("\
 			case %d:\n\
 				%s;\n\
-				break;\n", n, up->action);
-	}
+				break;\n",
+           n, up->action);
+  }
 
-	printf("\
+  printf("\
 			}\n\
 			return transition;\n\
 		}\n\
 	}\n\
 }\n");
-
 }

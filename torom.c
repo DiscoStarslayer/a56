@@ -27,43 +27,38 @@ static char *Copyright = "Copyright (C) 1990-1994 Quinn C. Jensen";
  *
  */
 
-
 #define MAX 256
 
-int 
-main (int argc, char *argv[])
-{
-	char buf[MAX];
-	int curaddr = 0;
-	int line = 0;
+int main(int argc, char *argv[]) {
+  char buf[MAX];
+  int curaddr = 0;
+  int line = 0;
 
-	while(gets(buf)) {
-		char seg;
-		int addr, data;
-		line++;
-		if(sscanf(buf, "%c%x%x", &seg, &addr, &data) == 3) {
-			if(seg == 'I') {
-				break;
-			} else {
-				if(addr < curaddr) {
-					fatal("%s: input line %d: can't go back\n", argv[0], line);
-				} else if(addr != curaddr) {
-					while(curaddr < addr) {
-						putword(0);
-						curaddr++;
-					}
-				}
-				putword(data);
-				curaddr++;
-			}
-		}
-	}
+  while (gets(buf)) {
+    char seg;
+    int addr, data;
+    line++;
+    if (sscanf(buf, "%c%x%x", &seg, &addr, &data) == 3) {
+      if (seg == 'I') {
+        break;
+      } else {
+        if (addr < curaddr) {
+          fatal("%s: input line %d: can't go back\n", argv[0], line);
+        } else if (addr != curaddr) {
+          while (curaddr < addr) {
+            putword(0);
+            curaddr++;
+          }
+        }
+        putword(data);
+        curaddr++;
+      }
+    }
+  }
 }
 
-int 
-putword (int data)
-{
-	putchar(data >>  0 & 0xFF);
-	putchar(data >>  8 & 0xFF);
-	putchar(data >> 16 & 0xFF);
+int putword(int data) {
+  putchar(data >> 0 & 0xFF);
+  putchar(data >> 8 & 0xFF);
+  putchar(data >> 16 & 0xFF);
 }

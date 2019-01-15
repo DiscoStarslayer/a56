@@ -41,130 +41,123 @@ extern BOOL list_on;
 BOOL list_on_next = TRUE;
 char *alloc();
 
-int
-main (int argc, char *argv[])
-{
-	int i;
-	extern char *optarg;
-	extern int optind;
-	int c;
-	char *output_file = "a56.out";
-	char *input_file;
-	char *usage = "usage: a56  [-b]  [-l]  [-d]  [-o output-file]  input-file\n";
+int main(int argc, char *argv[]) {
+  int i;
+  extern char *optarg;
+  extern int optind;
+  int c;
+  char *output_file = "a56.out";
+  char *input_file;
+  char *usage = "usage: a56  [-b]  [-l]  [-d]  [-o output-file]  input-file\n";
 
-	while((c = getopt(argc, argv, "bldo:")) != EOF) switch (c) {
-		case 'b':
-			binary_listing++;
-			break;
-		case 'l':
-			list_includes++;
-			break;
-		case 'd':
-			ldebug++;
-			break;
-		case 'o':
-			output_file = optarg;
-			break;
-		case '?':
-		default:
-			fatal(usage);
-	}
-	input_file = argv[optind++];
-	if(input_file == NULL) fatal(usage);
-	obj = open_write(output_file);
+  while ((c = getopt(argc, argv, "bldo:")) != EOF)
+    switch (c) {
+    case 'b':
+      binary_listing++;
+      break;
+    case 'l':
+      list_includes++;
+      break;
+    case 'd':
+      ldebug++;
+      break;
+    case 'o':
+      output_file = optarg;
+      break;
+    case '?':
+    default:
+      fatal(usage);
+    }
+  input_file = argv[optind++];
+  if (input_file == NULL)
+    fatal(usage);
+  obj = open_write(output_file);
 
-	pc = 0;
-	seg = 0;
-	pass = 1;
-	reset_psects();
-	include(input_file);
+  pc = 0;
+  seg = 0;
+  pass = 1;
+  reset_psects();
+  include(input_file);
 
-	pc = 0;
-	seg = 0;
-	pass = 2;
-	reset_psects();
-	include(input_file);
+  pc = 0;
+  seg = 0;
+  pass = 2;
+  reset_psects();
+  include(input_file);
 
-	psect_summary();
-	dump_symtab();
-	fclose(obj);
-	printf("errors=%d\n", error);
-	printf("warnings=%d\n", warning);
-	return error ? 1 : 0;
+  psect_summary();
+  dump_symtab();
+  fclose(obj);
+  printf("errors=%d\n", error);
+  printf("warnings=%d\n", warning);
+  return error ? 1 : 0;
 }
 
 struct inc inc[MAX_NEST];
 int inc_p = 0;
 FILE *yyin;
 
-int
-include (char *file)
-{
-	FILE *fp = open_read(file);
+int include(char *file) {
+  FILE *fp = open_read(file);
 
-	inc_p++;
-	if(inc_p >= MAX_NEST)
-		fatal("%s: include nesting too deep\n", file);
+  inc_p++;
+  if (inc_p >= MAX_NEST)
+    fatal("%s: include nesting too deep\n", file);
 
-	inc[inc_p].file = file;
-	inc[inc_p].fp = fp;
-	inc[inc_p].line = 1;
+  inc[inc_p].file = file;
+  inc[inc_p].fp = fp;
+  inc[inc_p].line = 1;
 
-	list_on_next = TRUE;
-	if(inc_p > 1 && NOT list_includes)
-		list_on_next = FALSE;
+  list_on_next = TRUE;
+  if (inc_p > 1 && NOT list_includes)
+    list_on_next = FALSE;
 
-	yyin = inc[inc_p].fp;
-	if(inc_p == 1)
+  yyin = inc[inc_p].fp;
+  if (inc_p == 1)
 #ifdef FLEX
-	{
-		static int started = 0;
-		if(started)
-			yyrestart(yyin);
-		else
-			started = 1;
-		yyparse();
-	}
+  {
+    static int started = 0;
+    if (started)
+      yyrestart(yyin);
+    else
+      started = 1;
+    yyparse();
+  }
 #else
-		yyparse();
+    yyparse();
 #endif
 }
 
-int
-yywrap (void)
-{
-	fclose(inc[inc_p].fp);
-	inc_p--;
-	list_on = list_on_next = TRUE;
-	if(inc_p > 1)
-		list_on = list_on_next = FALSE;
-	if(inc_p) {
-		yyin = inc[inc_p].fp;
-		return 0;
-	} else {
-		return 1;
-	}
+int yywrap(void) {
+  fclose(inc[inc_p].fp);
+  inc_p--;
+  list_on = list_on_next = TRUE;
+  if (inc_p > 1)
+    list_on = list_on_next = FALSE;
+  if (inc_p) {
+    yyin = inc[inc_p].fp;
+    return 0;
+  } else {
+    return 1;
+  }
 }
 
-struct n
-sym_ref (		/* return symbol value or UNDEF if not defined yet */
-    char *sym
-)
-{
-	struct sym *sp, *find_sym();
-	struct n result;
+struct n sym_ref(/* return symbol value or UNDEF if not defined yet */
+                 char *sym) {
+  struct sym *sp, *find_sym();
+  struct n result;
 
-	result.type = UNDEF;
+  result.type = UNDEF;
 
-	sp = find_sym(sym);
-	if(NOT sp) {
-		if(pass == 2) {
-			yyerror("%s: undefined symbol", sym);
-		}
-		return result;
-	}
+  sp = find_sym(sym);
+  if (NOT sp) {
+    if (pass == 2) {
+      yyerror("%s: undefined symbol", sym);
+    }
+    return result;
+  }
 
-	return sp->n;
+  return sp->n;
 }
 
 #define HASHSIZE 128
@@ -173,292 +166,269 @@ sym_ref (		/* return symbol value or UNDEF if not defined yet */
 
 struct sym *symtab[HASHSIZE];
 
-int
-sym_def (char *sym, int type, int seg, int i, double f)
-{
-	struct sym *sp, **stop, *find_sym();
+int sym_def(char *sym, int type, int seg, int i, double f) {
+  struct sym *sp, **stop, *find_sym();
 
-	if(pass == 1) {
-		if(find_sym(sym)) {
-			pass = 2;				/* what a kludge */
-			yyerror("%s: multiply defined symbol", sym);
-			pass = 1;
-			return -1;
-		}
-		stop = &symtab[HASH(sym)];
-		sp = NEW(struct sym);
-		sp->next = *stop;
-		*stop = sp;
-		sp->name = strsave(sym);
-		sp->n.type = type;
-		sp->n.seg = seg;
-		if(type == INT)
-			sp->n.val.i = i & 0xFFFFFF;
-		else
-			sp->n.val.f = f;
-	} else {
-		sp = find_sym(sym);
-		if(NOT sp)
-			fatal("internal error 304\n");
-		if(sp->n.type != type ||
-			type == INT && sp->n.val.i != (i & 0xFFFFFF) ||
-			type == FLT && sp->n.val.f != f)
-			yyerror("%s: assembler phase error", sym);
-	}
+  if (pass == 1) {
+    if (find_sym(sym)) {
+      pass = 2; /* what a kludge */
+      yyerror("%s: multiply defined symbol", sym);
+      pass = 1;
+      return -1;
+    }
+    stop = &symtab[HASH(sym)];
+    sp = NEW(struct sym);
+    sp->next = *stop;
+    *stop = sp;
+    sp->name = strsave(sym);
+    sp->n.type = type;
+    sp->n.seg = seg;
+    if (type == INT)
+      sp->n.val.i = i & 0xFFFFFF;
+    else
+      sp->n.val.f = f;
+  } else {
+    sp = find_sym(sym);
+    if (NOT sp)
+      fatal("internal error 304\n");
+    if (sp->n.type != type || type == INT && sp->n.val.i != (i & 0xFFFFFF) ||
+        type == FLT && sp->n.val.f != f)
+      yyerror("%s: assembler phase error", sym);
+  }
 }
 
-struct sym *
-find_sym (char *sym)
-{
-	struct sym *sp, **stop;
+struct sym *find_sym(char *sym) {
+  struct sym *sp, **stop;
 
-	stop = &symtab[HASH(sym)];
-	for(sp = *stop; sp; sp = sp->next)
-		if(strcmp(sp->name, sym) == 0)
-			return sp;
+  stop = &symtab[HASH(sym)];
+  for (sp = *stop; sp; sp = sp->next)
+    if (strcmp(sp->name, sym) == 0)
+      return sp;
 
-	return NULL;
+  return NULL;
 }
 
 extern char segs[];
-int
-dump_symtab (void)
-{
-	struct sym *sp, **stop;
-	int i;
+int dump_symtab(void) {
+  struct sym *sp, **stop;
+  int i;
 
-	printf("\n\
+  printf("\n\
 Symbol Table\n\
 -------------------------------------\n");
-/*
-SSSSSSSSSSSSSSSS S XXXXXX
-SSSSSSSSSSSSSSSS S DDDDDDDDD.DDDDDDDDDD
-*/
+  /*
+  SSSSSSSSSSSSSSSS S XXXXXX
+  SSSSSSSSSSSSSSSS S DDDDDDDDD.DDDDDDDDDD
+  */
 
-	for(i = 0, stop = symtab; i < HASHSIZE; i++, stop++) {
-		for(sp = *stop; sp; sp = sp->next) {
-			if(sp->n.type == INT) {
-				printf("%16s %c %06X\n", sp->name, segs[sp->n.seg], sp->n.val.i);
-				fprintf(obj, "I %06X %s\n", sp->n.val.i, sp->name);
-			} else {
-				printf("%16s %c %.10f\n", sp->name, segs[sp->n.seg], sp->n.val.f);
-				fprintf(obj, "F %.10f %s\n", sp->n.val.f, sp->name);
-			}
-		}
-	}
+  for (i = 0, stop = symtab; i < HASHSIZE; i++, stop++) {
+    for (sp = *stop; sp; sp = sp->next) {
+      if (sp->n.type == INT) {
+        printf("%16s %c %06X\n", sp->name, segs[sp->n.seg], sp->n.val.i);
+        fprintf(obj, "I %06X %s\n", sp->n.val.i, sp->name);
+      } else {
+        printf("%16s %c %.10f\n", sp->name, segs[sp->n.seg], sp->n.val.f);
+        fprintf(obj, "F %.10f %s\n", sp->n.val.f, sp->name);
+      }
+    }
+  }
 }
 
-char *
-printcode (int word)
-{
-	static char list[MAX], *lp;
-	int i;
+char *printcode(int word) {
+  static char list[MAX], *lp;
+  int i;
 
-	word &= 0xFFFFFF;
+  word &= 0xFFFFFF;
 
-	if(binary_listing) {
-		sprintf(list, "%06X<", word);
-		for(i = 0, lp = &list[7]; i < 24; i++, lp++) {
-			*lp = word & 1 << 23 - i ? '1' : '0';
-			if(i && i % 4 == 3)
-				*++lp = i % 8 == 7 ? ' ' : ',';
-		}
-		lp[-1] = '>';
-		lp[0] = '\0';
-	} else {
-		sprintf(list, "%06X", word);
-	}
-	return list;
+  if (binary_listing) {
+    sprintf(list, "%06X<", word);
+    for (i = 0, lp = &list[7]; i < 24; i++, lp++) {
+      *lp = word & 1 << 23 - i ? '1' : '0';
+      if (i && i % 4 == 3)
+        *++lp = i % 8 == 7 ? ' ' : ',';
+    }
+    lp[-1] = '>';
+    lp[0] = '\0';
+  } else {
+    sprintf(list, "%06X", word);
+  }
+  return list;
 }
 
 char *spacespace[2] = {
-/*P:XXXX_XXXXXX_*/
- "              ",
-/*P:XXXX_XXXXXX(XXXX_XXXX_XXXX_XXXX_XXXX_XXXX)_*/
- "                                             "};
-char *
-spaces (int n)
-{
-	return spacespace[binary_listing ? 1 : 0] + n;
-}
+    /*P:XXXX_XXXXXX_*/
+    "              ",
+    /*P:XXXX_XXXXXX(XXXX_XXXX_XXXX_XXXX_XXXX_XXXX)_*/
+    "                                             "};
+char *spaces(int n) { return spacespace[binary_listing ? 1 : 0] + n; }
 
 extern char segs[];
 
-int
-gencode (int seg, int pc, int word)
-{
-	fprintf(obj, "%c %04X %06X\n", segs[seg], pc, word & 0xFFFFFF);
+int gencode(int seg, int pc, int word) {
+  fprintf(obj, "%c %04X %06X\n", segs[seg], pc, word & 0xFFFFFF);
 }
 
 char fixbuf[1024];
 
-char *
-fixstring (char *s)
-{
-	char *bp = fixbuf;
-	int ival;
+char *fixstring(char *s) {
+  char *bp = fixbuf;
+  int ival;
 
-	while(*s) {
-		switch (*s) {
-			case '\'':
-			case '\"':
-				s++;
-				break;
-			case '\\':
-				switch (*++s) {
-					case 'b': *bp++ = '\b'; break;
-					case 'r': *bp++ = '\r'; break;
-					case 'f': *bp++ = '\f'; break;
-					case 'n': *bp++ = '\n'; break;
-					case 't': *bp++ = '\t'; break;
-					case '\\': *bp++ = '\\'; break;
-					case '0':
-						ival = 0;
-						while(*s >= '0' && *s <= '9') {
-							ival <<= 3;
-							ival += *s++ - '0';
-						}
-						*bp++ = ival;
-						break;
-				}
-				break;
-			default:
-				*bp++ = *s++;
-				break;
-		}
-	}
-	*bp = '\0';
-	return fixbuf;
+  while (*s) {
+    switch (*s) {
+    case '\'':
+    case '\"':
+      s++;
+      break;
+    case '\\':
+      switch (*++s) {
+      case 'b':
+        *bp++ = '\b';
+        break;
+      case 'r':
+        *bp++ = '\r';
+        break;
+      case 'f':
+        *bp++ = '\f';
+        break;
+      case 'n':
+        *bp++ = '\n';
+        break;
+      case 't':
+        *bp++ = '\t';
+        break;
+      case '\\':
+        *bp++ = '\\';
+        break;
+      case '0':
+        ival = 0;
+        while (*s >= '0' && *s <= '9') {
+          ival <<= 3;
+          ival += *s++ - '0';
+        }
+        *bp++ = ival;
+        break;
+      }
+      break;
+    default:
+      *bp++ = *s++;
+      break;
+    }
+  }
+  *bp = '\0';
+  return fixbuf;
 }
 
 #define ONE 0x4000000
 
-int
-makefrac (char *s)
-{
-	int frac = 0, div = 1;
-	int scale = 1;
+int makefrac(char *s) {
+  int frac = 0, div = 1;
+  int scale = 1;
 
-	while(*s) {
-		switch(*s) {
-			case '-':
-				scale = -1;
-				break;
-			case '.':
-				div = 10;
-				break;
-			default:
-				frac += (*s - '0') * scale * ONE / div;
-				div *= 10;
-				break;
-		}
-		s++;
-	}
+  while (*s) {
+    switch (*s) {
+    case '-':
+      scale = -1;
+      break;
+    case '.':
+      div = 10;
+      break;
+    default:
+      frac += (*s - '0') * scale * ONE / div;
+      div *= 10;
+      break;
+    }
+    s++;
+  }
 
-	return frac + scale * 4 >> 3 & 0xFFFFFF;
+  return frac + scale * 4 >> 3 & 0xFFFFFF;
 }
 
 /***************** psect stuff ************************/
 
 struct psect *ptop = NULL, *cur_psect = NULL;
 
-int
-reset_psects (void)
-{
-	struct psect *pp;
+int reset_psects(void) {
+  struct psect *pp;
 
-	for(pp = ptop; pp; pp = pp->next) {
-		pp->pc = pp->bottom;
-	}
+  for (pp = ptop; pp; pp = pp->next) {
+    pp->pc = pp->bottom;
+  }
 
-	set_psect(NULL);
+  set_psect(NULL);
 }
 
-int
-psect_summary (void)
-{
-	printf("\nSummary of psect usage\n\n");
+int psect_summary(void) {
+  printf("\nSummary of psect usage\n\n");
 
-	printf("\
+  printf("\
                  section seg base last top      used       avail    total\n\
 -------------------------------------------------------------------------\n");
-/*
-SSSSSSSSSSSSSSSSSSSSSSSS  X  FFFF FFFF FFFF 99999 100%  99999 100%  99999
-*/
+  /*
+  SSSSSSSSSSSSSSSSSSSSSSSS  X  FFFF FFFF FFFF 99999 100%  99999 100%  99999
+  */
 
-	summarize(ptop);	/* do it recursively to place back in order */
-	printf("\n");
+  summarize(ptop); /* do it recursively to place back in order */
+  printf("\n");
 }
 
-int
-summarize (struct psect *pp)
-{
-	int used, avail, of;
+int summarize(struct psect *pp) {
+  int used, avail, of;
 
-	if(pp == NULL)
-		return -1;
+  if (pp == NULL)
+    return -1;
 
-	used = pp->pc - pp->bottom;
-	avail = pp->top - pp->pc;
-	of = pp->top - pp->bottom;
+  used = pp->pc - pp->bottom;
+  avail = pp->top - pp->pc;
+  of = pp->top - pp->bottom;
 
-	summarize(pp->next);
+  summarize(pp->next);
 
-	printf("%24.24s  %c  %04X %04X %04X %5d %3d%%  %5d %3d%%  %5d\n",
-		pp->name, segs[pp->seg], pp->bottom, pp->pc, pp->top,
-		used, of ? used * 100 / of : 0, avail, of ? avail * 100 / of : 0,
-		of);
+  printf("%24.24s  %c  %04X %04X %04X %5d %3d%%  %5d %3d%%  %5d\n", pp->name,
+         segs[pp->seg], pp->bottom, pp->pc, pp->top, used,
+         of ? used * 100 / of : 0, avail, of ? avail * 100 / of : 0, of);
 }
 
-struct psect *
-find_psect (char *name)
-{
-	struct psect *pp;
+struct psect *find_psect(char *name) {
+  struct psect *pp;
 
-	for(pp = ptop; pp; pp = pp->next)
-		if(strcmp(pp->name, name) == 0)
-			return pp;
+  for (pp = ptop; pp; pp = pp->next)
+    if (strcmp(pp->name, name) == 0)
+      return pp;
 
-	return NULL;
+  return NULL;
 }
 
-int
-set_psect (struct psect *pp)
-{
-	cur_psect = pp;
+int set_psect(struct psect *pp) { cur_psect = pp; }
+
+int check_psect(int seg, unsigned int pc) {
+  if (cur_psect) {
+    if (seg == cur_psect->seg && pc >= cur_psect->bottom &&
+        pc <= cur_psect->top) {
+      cur_psect->pc = pc;
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+  } else {
+    return TRUE;
+  }
 }
 
-int
-check_psect (int seg, unsigned int pc)
-{
-	if(cur_psect) {
-		if(seg == cur_psect->seg && pc >= cur_psect->bottom &&
-			pc <= cur_psect->top) {
-			cur_psect->pc = pc;
-			return TRUE;
-		} else {
-			return FALSE;
-		}
-	} else {
-		return TRUE;
-	}
-}
+struct psect *new_psect(char *name, int seg, unsigned int bottom,
+                        unsigned int top) {
+  struct psect *pp = find_psect(name);
 
-struct psect *
-new_psect (char *name, int seg, unsigned int bottom, unsigned int top)
-{
-	struct psect *pp = find_psect(name);
+  if (NOT pp) {
+    pp = (struct psect *)alloc(sizeof *pp);
+    pp->next = ptop;
+    ptop = pp;
+    pp->name = strsave(name);
+    pp->seg = seg;
+    pp->pc = bottom;
+  }
+  pp->bottom = bottom;
+  pp->top = top;
 
-	if(NOT pp) {
-		pp = (struct psect *)alloc(sizeof *pp);
-		pp->next = ptop;
-		ptop = pp;
-		pp->name = strsave(name);
-		pp->seg = seg;
-		pp->pc = bottom;
-	}
-	pp->bottom = bottom;
-	pp->top = top;
-
-	return pp;
+  return pp;
 }
