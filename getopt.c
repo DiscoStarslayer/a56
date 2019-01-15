@@ -25,9 +25,7 @@ static	char	sccsfid[] = "@(#) getopt.c 5.0 (UTZoo) 1985";
 
 /* this is included because index is not on some UNIX systems */
 char *
-index (s, c)
-register	char	*s;
-register	int 	c;
+index (register char *s, register int c)
 	{
 	while (*s)
 		if (c == *s) return (s);
@@ -47,10 +45,8 @@ char	*optarg;		/* argument associated with option */
 		fputc(optopt,stderr);fputc('\n',stderr);return(BADCH);
 
 
-getopt(nargc,nargv,ostr)
-int	nargc;
-char	**nargv,
-	*ostr;
+int 
+getopt (int nargc, char **nargv, char *ostr)
 {
 	static char	*place = EMSG;	/* option letter processing */
 	register char	*oli;		/* option letter list index */
@@ -91,7 +87,8 @@ char	**nargv,
 static	char	sccspid[] = "@(#) getopt.c 5.1 (WangInst) 6/15/85";
 #endif
 
-main (argc, argv) char **argv;
+int 
+main (int argc, char **argv)
 	{
 	char	*optstring = argv[1];
 	char	*argv0 = argv[0];

@@ -39,7 +39,8 @@ double atof();
 #define MAX_TOK 1024
 char tok[MAX_TOK];
 
-yylex()
+int 
+yylex (void)
 {
 	int ltok = next_tok();
 	int itok;
@@ -88,8 +89,8 @@ yylex()
 	}
 }
 
-is_keyword(tok)
-char *tok;
+int 
+is_keyword (char *tok)
 {
 	int kval = kparse(tok);
 	if(kval > 0)
@@ -110,7 +111,8 @@ struct ascii_tab {
 
 extern FILE *yyin;
 
-int next_tok()
+int 
+next_tok (void)
 {
 	char *tp = tok;
 	enum {S_TOP, S_HEXNUM, S_NUM, S_ALNUM, S_CHAR, S_ESC_CHAR, S_COMMENT,

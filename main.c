@@ -41,9 +41,8 @@ extern BOOL list_on;
 BOOL list_on_next = TRUE;
 char *alloc();
 
-main(argc,argv)
-int argc;
-char *argv[];
+int 
+main (int argc, char *argv[])
 {
 	int i;
 	extern char *optarg;
@@ -98,8 +97,8 @@ struct inc inc[MAX_NEST];
 int inc_p = 0;
 FILE *yyin;
 
-include(file)
-char *file;
+int 
+include (char *file)
 {
 	FILE *fp = open_read(file);
 
@@ -131,7 +130,8 @@ char *file;
 #endif
 }
 
-yywrap()
+int 
+yywrap (void)
 {
 	fclose(inc[inc_p].fp);
 	inc_p--;
@@ -146,9 +146,10 @@ yywrap()
 	}
 }
 
-struct n
-sym_ref(sym)		/* return symbol value or UNDEF if not defined yet */
-char *sym;
+struct n 
+sym_ref (		/* return symbol value or UNDEF if not defined yet */
+    char *sym
+)
 {
 	struct sym *sp, *find_sym();
 	struct n result;
@@ -172,12 +173,8 @@ char *sym;
 
 struct sym *symtab[HASHSIZE];
 
-sym_def(sym, type, seg, i, f)
-char *sym;
-int type;
-int seg;
-int i;
-double f;
+int 
+sym_def (char *sym, int type, int seg, int i, double f)
 {
 	struct sym *sp, **stop, *find_sym();
 
@@ -210,8 +207,8 @@ double f;
 	}		
 }
 
-struct sym *find_sym(sym)
-char *sym;
+struct sym *
+find_sym (char *sym)
 {
 	struct sym *sp, **stop;
 
@@ -224,7 +221,8 @@ char *sym;
 }
 
 extern char segs[];
-dump_symtab()
+int 
+dump_symtab (void)
 {
 	struct sym *sp, **stop;
 	int i;
@@ -250,8 +248,8 @@ SSSSSSSSSSSSSSSS S DDDDDDDDD.DDDDDDDDDD
 	}   
 }
 
-char *printcode(word)
-int word;
+char *
+printcode (int word)
 {
 	static char list[MAX], *lp;
 	int i;
@@ -278,24 +276,24 @@ char *spacespace[2] = {
  "              ",
 /*P:XXXX_XXXXXX(XXXX_XXXX_XXXX_XXXX_XXXX_XXXX)_*/
  "                                             "};
-char *spaces(n)
-int n;
+char *
+spaces (int n)
 {
 	return spacespace[binary_listing ? 1 : 0] + n;
 }
 
 extern char segs[];
 
-gencode(seg, pc, word)
-int seg, pc, word;
+int 
+gencode (int seg, int pc, int word)
 {
 	fprintf(obj, "%c %04X %06X\n", segs[seg], pc, word & 0xFFFFFF);
 }
 
 char fixbuf[1024];
 
-char *fixstring(s)
-char *s;
+char *
+fixstring (char *s)
 {
 	char *bp = fixbuf;
 	int ival;
@@ -335,8 +333,8 @@ char *s;
 
 #define ONE 0x4000000
 
-makefrac(s)
-char *s;
+int 
+makefrac (char *s)
 {
 	int frac = 0, div = 1;
 	int scale = 1;
@@ -364,7 +362,8 @@ char *s;
 
 struct psect *ptop = NULL, *cur_psect = NULL;
 
-reset_psects()
+int 
+reset_psects (void)
 {
 	struct psect *pp;
 
@@ -375,7 +374,8 @@ reset_psects()
 	set_psect(NULL);
 }
 
-psect_summary()
+int 
+psect_summary (void)
 {
 	printf("\nSummary of psect usage\n\n");
 
@@ -390,8 +390,8 @@ SSSSSSSSSSSSSSSSSSSSSSSS  X  FFFF FFFF FFFF 99999 100%  99999 100%  99999
 	printf("\n");
 }
 
-summarize(pp)
-struct psect *pp;
+int 
+summarize (struct psect *pp)
 {
 	int used, avail, of;
 
@@ -410,8 +410,8 @@ struct psect *pp;
 		of);
 }
 
-struct psect *find_psect(name)
-char *name;
+struct psect *
+find_psect (char *name)
 {
 	struct psect *pp;
 
@@ -422,15 +422,14 @@ char *name;
 	return NULL;
 }
 
-set_psect(pp)
-struct psect *pp;
+int 
+set_psect (struct psect *pp)
 {
 	cur_psect = pp;
 }
 
-check_psect(seg, pc)
-int seg;
-unsigned int pc;
+int 
+check_psect (int seg, unsigned int pc)
 {
 	if(cur_psect) {
 		if(seg == cur_psect->seg && pc >= cur_psect->bottom && 
@@ -445,10 +444,8 @@ unsigned int pc;
 	}
 }
 
-struct psect *new_psect(name, seg, bottom, top)
-char *name;
-int seg;
-unsigned int bottom, top;
+struct psect *
+new_psect (char *name, int seg, unsigned int bottom, unsigned int top)
 {
 	struct psect *pp = find_psect(name);
 

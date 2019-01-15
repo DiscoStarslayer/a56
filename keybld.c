@@ -22,7 +22,8 @@ static char *Copyright = "Copyright (C) 1990-1994 Quinn C. Jensen";
 
 char buf[1024];
 
-main()
+int 
+main (void)
 {
 	int line = 0;
 
@@ -69,8 +70,8 @@ struct user_action {
 } *utop = NULL, *ucur = NULL;
 int n_user_actions = 0;
 
-add_tok(tok, actions)
-char *tok, *actions;
+int 
+add_tok (char *tok, char *actions)
 {
 	struct state *scur;
 	struct user_action *unew = (struct user_action *)alloc(sizeof *unew);
@@ -92,10 +93,8 @@ char *tok, *actions;
 	return 0;
 }
 
-follow(c, tp, sp)
-char c;
-char *tp;
-struct state *sp;
+int 
+follow (char c, char *tp, struct state *sp)
 {
 	struct trans *arcp, *arcup;
 	
@@ -130,8 +129,8 @@ struct state *sp;
 	}
 }
 
-struct state *new_state(tp)
-char *tp;
+struct state *
+new_state (char *tp)
 {
 	struct state *snew = (struct state *)alloc(sizeof *snew);
 	char tmp[1024];
@@ -160,7 +159,8 @@ char *tp;
 	return snew;
 }
 
-dump_machine()
+int 
+dump_machine (void)
 {
 	struct state *sp;
 	struct user_action *up;

@@ -31,9 +31,8 @@ static char *Copyright = "Copyright (C) 1990-1994 Quinn C. Jensen";
 
 #define MAX 256
 
-main(argc,argv)
-int argc;
-char *argv[];
+int 
+main (int argc, char *argv[])
 {
 	char buf[MAX];
 	int curaddr = 0;
